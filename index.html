@@ -3,122 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basic Code Editor</title>
-    <style>
-        /* CSS Variables */
-        :root {
-            /* Colors */
-            --editor-bg: #2b2b2b;
-            --line-numbers-bg: #444;
-            --line-numbers-color: #bbb;
-            --text-color: #fff;
-            --border-color: #3c3c3c;
-
-            /* Typography */
-            --font-size: 14px;
-            --line-height: 1.5;
-            --font-family: 'Consolas', 'Monaco', monospace;
-
-            /* Spacing */
-            --padding: 10px;
-            --line-numbers-padding: 10px 5px 10px 10px;
-            --line-numbers-width: 40px;
-
-            /* Editor Dimensions */
-            --editor-width: 600px;
-            --editor-height: 400px;
-
-            /* Tab Size */
-            --tab-size: 4;
-        }
-
-        /* Reset and Base Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-        }
-
-        /* Editor Container */
-        .editor-container {
-            display: flex;
-            background: var(--editor-bg);
-            border-radius: 5px;
-            overflow: hidden;
-            width: var(--editor-width);
-            height: var(--editor-height);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Line Numbers */
-        .line-numbers {
-            background: var(--line-numbers-bg);
-            color: var(--line-numbers-color);
-            padding: var(--line-numbers-padding);
-            text-align: right;
-            user-select: none;
-            min-width: var(--line-numbers-width);
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            overflow-y: hidden;
-            border-right: 1px solid var(--border-color);
-        }
-
-        .line-numbers div {
-            padding: 0;
-            margin: 0;
-            line-height: var(--line-height);
-        }
-
-        /* Code Area */
-        .code-area {
-            flex: 1;
-            padding: var(--padding);
-            border: none;
-            outline: none;
-            font-size: var(--font-size);
-            background: var(--editor-bg);
-            color: var(--text-color);
-            line-height: var(--line-height);
-            resize: none;
-            font-family: var(--font-family);
-            tab-size: var(--tab-size);
-        }
-    </style>
+    <title>Code Editor</title>
 </head>
 <body>
-    <div class="editor-container">
-        <div class="line-numbers" id="lineNumbers">1</div>
-        <textarea class="code-area" id="codeArea"></textarea>
-    </div>
+    <div id="editor-container"></div>
 
     <script>
-        // Editor Class to handle all editor functionality
         class CodeEditor {
-            constructor() {
-                this.codeArea = document.getElementById("codeArea");
-                this.lineNumbers = document.getElementById("lineNumbers");
-                this.tabSize = 4;
+            constructor(containerId, options = {}) {
+                this.container = document.getElementById(containerId);
+                if (!this.container) {
+                    throw new Error(`Container with id "${containerId}" not found`);
+                }
+
+                // Default options with user overrides
+                this.options = {
+                    tabSize: 4,
+                    theme: {
+                        editorBg: '#2b2b2b',
+                        lineNumbersBg: '#444',
+                        lineNumbersColor: '#bbb',
+                        textColor: '#fff',
+                        borderColor: '#3c3c3c'
+                    },
+                    dimensions: {
+                        width: '600px',
+                        height: '400px'
+                    },
+                    ...options
+                };
+
                 this.init();
             }
 
             init() {
-                this.setupEventListeners();
-                this.updateLineNumbers();
+                try {
+                    this.createStyles();
+                    this.createEditor();
+                    this.setupEventListeners();
+                    this.updateLineNumbers();
+                } catch (error) {
+                    console.error('Failed to initialize editor:', error);
+                    throw error;
+                }
+            }
+
+            createStyles() {
+                const style = document.createElement('style');
+                style.textContent = `
+                    :root {
+                        --editor-bg: ${this.options.theme.editorBg};
+                        --line-numbers-bg: ${this.options.theme.lineNumbersBg};
+                        --line-numbers-color: ${this.options.theme.lineNumbersColor};
+                        --text-color: ${this.options.theme.textColor};
+                        --border-color: ${this.options.theme.borderColor};
+                        --font-size: 14px;
+                        --line-height: 1.5;
+                        --font-family: 'Consolas', 'Monaco', monospace;
+                        --padding: 10px;
+                        --line-numbers-padding: 10px 5px 10px 10px;
+                        --line-numbers-width: 40px;
+                        --editor-width: ${this.options.dimensions.width};
+                        --editor-height: ${this.options.dimensions.height};
+                        --tab-size: ${this.options.tabSize};
+                    }
+
+                    .editor-container {
+                        display: flex;
+                        background: var(--editor-bg);
+                        border-radius: 5px;
+                        overflow: hidden;
+                        width: var(--editor-width);
+                        height: var(--editor-height);
+                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+                    }
+
+                    .line-numbers {
+                        background: var(--line-numbers-bg);
+                        color: var(--line-numbers-color);
+                        padding: var(--line-numbers-padding);
+                        text-align: right;
+                        user-select: none;
+                        min-width: var(--line-numbers-width);
+                        font-size: var(--font-size);
+                        line-height: var(--line-height);
+                        overflow-y: hidden;
+                        border-right: 1px solid var(--border-color);
+                    }
+
+                    .line-numbers div {
+                        padding: 0;
+                        margin: 0;
+                        line-height: var(--line-height);
+                    }
+
+                    .code-area {
+                        flex: 1;
+                        padding: var(--padding);
+                        border: none;
+                        outline: none;
+                        font-size: var(--font-size);
+                        background: var(--editor-bg);
+                        color: var(--text-color);
+                        line-height: var(--line-height);
+                        resize: none;
+                        font-family: var(--font-family);
+                        tab-size: var(--tab-size);
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            createEditor() {
+                this.container.className = 'editor-container';
+                
+                // Create line numbers container
+                this.lineNumbers = document.createElement('div');
+                this.lineNumbers.className = 'line-numbers';
+                this.lineNumbers.id = 'lineNumbers';
+                this.lineNumbers.textContent = '1';
+                
+                // Create code area
+                this.codeArea = document.createElement('textarea');
+                this.codeArea.className = 'code-area';
+                this.codeArea.id = 'codeArea';
+                this.codeArea.spellcheck = false;
+                
+                // Append elements to container
+                this.container.appendChild(this.lineNumbers);
+                this.container.appendChild(this.codeArea);
             }
 
             setupEventListeners() {
-                this.codeArea.addEventListener('input', () => this.updateLineNumbers());
-                this.codeArea.addEventListener('scroll', () => this.syncScroll());
+                // Debounce the line number updates
+                let timeout;
+                this.codeArea.addEventListener('input', () => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => this.updateLineNumbers(), 100);
+                });
+
+                // Throttle scroll sync
+                let ticking = false;
+                this.codeArea.addEventListener('scroll', () => {
+                    if (!ticking) {
+                        window.requestAnimationFrame(() => {
+                            this.syncScroll();
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                });
+
                 this.codeArea.addEventListener('keydown', (e) => this.handleKeyDown(e));
             }
 
@@ -130,18 +165,26 @@
             }
 
             insertTab() {
-                const start = this.codeArea.selectionStart;
-                const end = this.codeArea.selectionEnd;
-                const value = this.codeArea.value;
-                const spaces = ' '.repeat(this.tabSize);
-                
-                this.codeArea.value = value.substring(0, start) + spaces + value.substring(end);
-                this.codeArea.selectionStart = this.codeArea.selectionEnd = start + this.tabSize;
+                try {
+                    const start = this.codeArea.selectionStart;
+                    const end = this.codeArea.selectionEnd;
+                    const value = this.codeArea.value;
+                    const spaces = ' '.repeat(this.options.tabSize);
+                    
+                    this.codeArea.value = value.substring(0, start) + spaces + value.substring(end);
+                    this.codeArea.selectionStart = this.codeArea.selectionEnd = start + this.options.tabSize;
+                } catch (error) {
+                    console.error('Failed to insert tab:', error);
+                }
             }
 
             updateLineNumbers() {
-                const lines = this.codeArea.value.split("\n").length;
-                this.lineNumbers.innerHTML = this.generateLineNumbers(lines);
+                try {
+                    const lines = this.codeArea.value.split("\n").length;
+                    this.lineNumbers.innerHTML = this.generateLineNumbers(lines);
+                } catch (error) {
+                    console.error('Failed to update line numbers:', error);
+                }
             }
 
             generateLineNumbers(lines) {
@@ -152,13 +195,49 @@
             }
 
             syncScroll() {
-                this.lineNumbers.scrollTop = this.codeArea.scrollTop;
+                try {
+                    this.lineNumbers.scrollTop = this.codeArea.scrollTop;
+                } catch (error) {
+                    console.error('Failed to sync scroll:', error);
+                }
+            }
+
+            // Public methods
+            getValue() {
+                return this.codeArea.value;
+            }
+
+            setValue(value) {
+                this.codeArea.value = value;
+                this.updateLineNumbers();
+            }
+
+            focus() {
+                this.codeArea.focus();
             }
         }
 
         // Initialize the editor when the DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            new CodeEditor();
+            try {
+                new CodeEditor('editor-container', {
+                    // Optional custom options
+                    tabSize: 4,
+                    theme: {
+                        editorBg: '#2b2b2b',
+                        lineNumbersBg: '#444',
+                        lineNumbersColor: '#bbb',
+                        textColor: '#fff',
+                        borderColor: '#3c3c3c'
+                    },
+                    dimensions: {
+                        width: '600px',
+                        height: '400px'
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to initialize editor:', error);
+            }
         });
     </script>
 </body>
