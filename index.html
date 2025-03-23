@@ -5,78 +5,161 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basic Code Editor</title>
     <style>
+        /* CSS Variables */
+        :root {
+            /* Colors */
+            --editor-bg: #2b2b2b;
+            --line-numbers-bg: #444;
+            --line-numbers-color: #bbb;
+            --text-color: #fff;
+            --border-color: #3c3c3c;
+
+            /* Typography */
+            --font-size: 14px;
+            --line-height: 1.5;
+            --font-family: 'Consolas', 'Monaco', monospace;
+
+            /* Spacing */
+            --padding: 10px;
+            --line-numbers-padding: 10px 5px 10px 10px;
+            --line-numbers-width: 40px;
+
+            /* Editor Dimensions */
+            --editor-width: 600px;
+            --editor-height: 400px;
+
+            /* Tab Size */
+            --tab-size: 4;
+        }
+
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             background-color: #f5f5f5;
-            margin: 0;
         }
+
+        /* Editor Container */
         .editor-container {
             display: flex;
-            background: #2b2b2b;
+            background: var(--editor-bg);
             border-radius: 5px;
             overflow: hidden;
-            width: 600px;
-            height: 400px;
+            width: var(--editor-width);
+            height: var(--editor-height);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
+
+        /* Line Numbers */
         .line-numbers {
-            background: #444;
-            color: #bbb;
-            padding: 10px 5px 10px 10px;
+            background: var(--line-numbers-bg);
+            color: var(--line-numbers-color);
+            padding: var(--line-numbers-padding);
             text-align: right;
             user-select: none;
-            min-width: 40px;
-            font-size: 14px;
-            line-height: 1.5;
-            box-sizing: border-box;
+            min-width: var(--line-numbers-width);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
             overflow-y: hidden;
+            border-right: 1px solid var(--border-color);
         }
-        .code-area {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            outline: none;
-            font-size: 14px;
-            background: #2b2b2b;
-            color: #fff;
-            line-height: 1.5;
-            resize: none;
-            box-sizing: border-box;
-            font-family: 'Consolas', 'Monaco', monospace;
-            tab-size: 4;
-        }
+
         .line-numbers div {
             padding: 0;
             margin: 0;
-            line-height: 1.5;
+            line-height: var(--line-height);
+        }
+
+        /* Code Area */
+        .code-area {
+            flex: 1;
+            padding: var(--padding);
+            border: none;
+            outline: none;
+            font-size: var(--font-size);
+            background: var(--editor-bg);
+            color: var(--text-color);
+            line-height: var(--line-height);
+            resize: none;
+            font-family: var(--font-family);
+            tab-size: var(--tab-size);
         }
     </style>
 </head>
 <body>
     <div class="editor-container">
         <div class="line-numbers" id="lineNumbers">1</div>
-        <textarea class="code-area" id="codeArea" oninput="updateLineNumbers()" onscroll="syncScroll()"></textarea>
+        <textarea class="code-area" id="codeArea"></textarea>
     </div>
 
     <script>
-        function updateLineNumbers() {
-            const codeArea = document.getElementById("codeArea");
-            const lineNumbers = document.getElementById("lineNumbers");
-            
-            const lines = codeArea.value.split("\n").length;
-            lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => `<div>${i + 1}</div>`).join("");
+        // Editor Class to handle all editor functionality
+        class CodeEditor {
+            constructor() {
+                this.codeArea = document.getElementById("codeArea");
+                this.lineNumbers = document.getElementById("lineNumbers");
+                this.tabSize = 4;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateLineNumbers();
+            }
+
+            setupEventListeners() {
+                this.codeArea.addEventListener('input', () => this.updateLineNumbers());
+                this.codeArea.addEventListener('scroll', () => this.syncScroll());
+                this.codeArea.addEventListener('keydown', (e) => this.handleKeyDown(e));
+            }
+
+            handleKeyDown(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    this.insertTab();
+                }
+            }
+
+            insertTab() {
+                const start = this.codeArea.selectionStart;
+                const end = this.codeArea.selectionEnd;
+                const value = this.codeArea.value;
+                const spaces = ' '.repeat(this.tabSize);
+                
+                this.codeArea.value = value.substring(0, start) + spaces + value.substring(end);
+                this.codeArea.selectionStart = this.codeArea.selectionEnd = start + this.tabSize;
+            }
+
+            updateLineNumbers() {
+                const lines = this.codeArea.value.split("\n").length;
+                this.lineNumbers.innerHTML = this.generateLineNumbers(lines);
+            }
+
+            generateLineNumbers(lines) {
+                return Array.from(
+                    { length: lines }, 
+                    (_, i) => `<div>${i + 1}</div>`
+                ).join("");
+            }
+
+            syncScroll() {
+                this.lineNumbers.scrollTop = this.codeArea.scrollTop;
+            }
         }
 
-        function syncScroll() {
-            document.getElementById("lineNumbers").scrollTop = document.getElementById("codeArea").scrollTop;
-        }
-
-        // Initial line number
-        updateLineNumbers();
+        // Initialize the editor when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new CodeEditor();
+        });
     </script>
 </body>
 </html>
